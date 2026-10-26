@@ -1,0 +1,10 @@
+{
+  "ayala": {
+    "pass": "lionfire",
+    "role": "admin"
+  },
+  "alberto": {
+    "pass": "alberto1",
+    "role": "user"
+  }
+}
