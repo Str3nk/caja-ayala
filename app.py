@@ -43,7 +43,7 @@ body{{font-family:Arial;background:#0f172a;color:white;display:flex;justify-cont
 input{{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;box-sizing:border-box}}
 button{{width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer}}
 </style></head><body>{LOADER}<div class="card">
-<h2>🌙 Caja Ayala - Login</h2><form method="post">
+<h2>🌙 Login</h2><form method="post">
 <input name="user" placeholder="Usuario" required>
 <input name="pass" type="password" placeholder="Clave" required>
 <button>Entrar</button>{{% if error %}}<p style="color:#f87171">{{{{error}}}}</p>{{% endif %}}</form></div></body></html>
@@ -71,10 +71,35 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 <a href="/logout" class="btn-logout">Salir</a>
 </div>
 </div>
-<div class="search"><input id="q" placeholder="🔍 Buscar por RIF, código, razón social, sector, archivo o gaveta..." onkeyup="filtrar()" autofocus>
+<div class="search"><input id="q" placeholder="🔍 Buscar por RIF, código, razón social, sector, archivo, gaveta o último pago..." onkeyup="filtrar()" autofocus>
 <div id="result">Escribe para buscar</div>
 <table><thead><tr><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ESTATUS</th><th>ARCHIVO</th><th>GAVETA</th><th>ULTIMO PAGO</th><th>RECIBO</th></tr></thead><tbody id="tbody"></tbody></table></div>
-<script>const data={{{{data_json|safe}}}};function filtrar(){{const q=document.getElementById('q').value.toLowerCase().trim();const tbody=document.getElementById('tbody');const res=document.getElementById('result');tbody.innerHTML='';if(!q){{res.innerText='Escribe para buscar';return}}const f=data.filter(r=>String(r['RIF']).toLowerCase().includes(q)||String(r['RAZON SOCIAL']).toLowerCase().includes(q)||String(r['CODIGO EXPEDIENTE']).toLowerCase().includes(q)||String(r['SECTOR']).toLowerCase().includes(q)||String(r['ARCHIVO']).toLowerCase().includes(q)||String(r['GAVETA']).toLowerCase().includes(q)).slice(0,100);res.innerText=f.length+' resultados';f.forEach(r=>{{const tr=document.createElement('tr');tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ESTATUS DE LICENCIA']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;tbody.appendChild(tr)}})}}
+<script>
+const data={{{{data_json|safe}}}};
+function filtrar(){{
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const tbody=document.getElementById('tbody');
+  const res=document.getElementById('result');
+  tbody.innerHTML='';
+  if(!q){{res.innerText='Escribe para buscar';return}}
+  const f=data.filter(r=>
+    String(r['RIF']).toLowerCase().includes(q)||
+    String(r['RAZON SOCIAL']).toLowerCase().includes(q)||
+    String(r['CODIGO EXPEDIENTE']).toLowerCase().includes(q)||
+    String(r['SECTOR']).toLowerCase().includes(q)||
+    String(r['ARCHIVO']).toLowerCase().includes(q)||
+    String(r['GAVETA']).toLowerCase().includes(q)||
+    String(r['ULTIMO PAGO']).toLowerCase().includes(q)||
+    String(r['NUMERO DE RECIBO']).toLowerCase().includes(q)||
+    String(r['ESTATUS DE LICENCIA']).toLowerCase().includes(q)
+  ).slice(0,100);
+  res.innerText=f.length+' resultados';
+  f.forEach(r=>{{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ESTATUS DE LICENCIA']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;
+    tbody.appendChild(tr);
+  }});
+}}
 if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js')}}
 </script></body></html>
 """
