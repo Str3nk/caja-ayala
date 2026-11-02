@@ -4,7 +4,7 @@ import os, json
 
 app = Flask(__name__)
 app.secret_key = 'lionfire-secret-2025'
-EXCEL_FILE = 'EXCEL_CAJA_A_2025.xlsx'
+EXCEL_FILE = 'EXCEL CAJA A 2025.xlsx'
 USERS_FILE = 'users.json'
 
 def load_users():
@@ -21,7 +21,7 @@ def save_users(users):
         json.dump(users, f, indent=2)
 
 def load_data():
-    df = pd.read_excel(EXCEL_FILE, dtype=str)
+    df = pd.read_excel(EXCEL_FILE, dtype=str, sheet_name='DATA')
     df.columns = [str(c).strip().upper() for c in df.columns]
     df = df.fillna('')
     return df.to_dict(orient='records')
