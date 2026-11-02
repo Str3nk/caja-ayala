@@ -4,7 +4,7 @@ import os, json
 
 app = Flask(__name__)
 app.secret_key = 'lionfire-secret-2025'
-EXCEL_FILE = 'EXCEL CAJA A 2025.xlsx'
+EXCEL_FILE = 'EXCEL_CAJA_A_2025.xlsx'
 USERS_FILE = 'users.json'
 
 def load_users():
@@ -23,16 +23,15 @@ def save_users(users):
 def load_data():
     df = pd.read_excel(EXCEL_FILE)
     df.columns = [str(c).strip().upper() for c in df.columns]
-    df = df[pd.to_numeric(df['RECIBO'], errors='coerce').notna()]
+    df = df[pd.to_numeric(df['NUMERO DE RECIBO'], errors='coerce').notna()]
     df = df.fillna('')
-    df['FECHA'] = df['FECHA'].astype(str)
+    df['ULTIMO PAGO'] = df['ULTIMO PAGO'].astype(str)
     return df.to_dict(orient='records')
 
 DATA = load_data()
-print(f"Cargados {len(DATA)} recibos - Usuarios: {list(load_users().keys())}")
+print(f"Cargados {len(DATA)} registros - Usuarios: {list(load_users().keys())}")
 
 LOADER = """
-<!-- LOADER BONITO CAJA AYALA -->
 <div id="loader-caja"><div class="caja-box"><div class="caja-icon">💰</div><div class="spinner-caja"></div><h2>Caja Ayala</h2><p>Cargando sistema...</p></div></div>
 <style>#loader-caja{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .6s ease}#loader-caja.hide{opacity:0;pointer-events:none}.caja-box{text-align:center;color:#fff;font-family:system-ui}.caja-icon{font-size:52px;animation:float 2s ease-in-out infinite}.spinner-caja{width:44px;height:44px;border:3px solid #1e293b;border-top-color:#10b981;border-radius:50%;margin:16px auto;animation:spin .8s linear infinite}.caja-box h2{margin:0;font-size:22px;font-weight:700}.caja-box p{opacity:.6;font-size:13px;margin-top:6px}@keyframes spin{to{transform:rotate(360deg)}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}</style>
 <script>window.addEventListener('load',()=>{setTimeout(()=>{const l=document.getElementById('loader-caja');l.classList.add('hide');setTimeout(()=>l.remove(),600)},400)});</script>
@@ -74,10 +73,10 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 <a href="/logout" class="btn-logout">Salir</a>
 </div>
 </div>
-<div class="search"><input id="q" placeholder="🔍 Buscar recibo... Ej: 13774" onkeyup="filtrar()" autofocus>
-<div id="result">Escribe un recibo</div>
-<table><thead><tr><th>FECHA</th><th>RECIBO</th><th>MONTO</th><th>PUNTO</th><th>TRANSF</th><th>N.TRANSF</th></tr></thead><tbody id="tbody"></tbody></table></div>
-<script>const data={{{{data_json|safe}}}};function filtrar(){{const q=document.getElementById('q').value.toLowerCase();const tbody=document.getElementById('tbody');const res=document.getElementById('result');tbody.innerHTML='';if(!q){{res.innerText='Escribe un recibo';return}}const f=data.filter(r=>String(r.RECIBO).toLowerCase().includes(q)||String(r['N. TRANSFERENCIA']).toLowerCase().includes(q)).slice(0,100);res.innerText=f.length+' resultados';f.forEach(r=>{{const tr=document.createElement('tr');tr.innerHTML=`<td>${{r.FECHA.substring(0,10)}}</td><td><span class=badge>${{r.RECIBO}}</span></td><td>${{r.MONTO}}</td><td>${{r.PUNTO}}</td><td>${{r.TRANSFERENCIA}}</td><td>${{r['N. TRANSFERENCIA']}}</td>`;tbody.appendChild(tr)}})}}
+<div class="search"><input id="q" placeholder="🔍 Buscar recibo, código, RIF o razón social... Ej: 001227" onkeyup="filtrar()" autofocus>
+<div id="result">Escribe para buscar</div>
+<table><thead><tr><th>ULTIMO PAGO</th><th>NUMERO DE RECIBO</th><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ARCHIVO</th><th>GAVETA</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<script>const data={{{{data_json|safe}}}};function filtrar(){{const q=document.getElementById('q').value.toLowerCase().trim();const tbody=document.getElementById('tbody');const res=document.getElementById('result');tbody.innerHTML='';if(!q){{res.innerText='Escribe para buscar';return}}const f=data.filter(r=>String(r['NUMERO DE RECIBO']).toLowerCase().includes(q)||String(r['CODIGO EXPEDIENTE']).toLowerCase().includes(q)||String(r['RIF']).toLowerCase().includes(q)||String(r['RAZON SOCIAL']).toLowerCase().includes(q)).slice(0,100);res.innerText=f.length+' resultados';f.forEach(r=>{{const tr=document.createElement('tr');tr.innerHTML=`<td>${{r['ULTIMO PAGO']}}</td><td><span class=badge>${{r['NUMERO DE RECIBO']}}</span></td><td>${{r['CODIGO EXPEDIENTE']}}</td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td>`;tbody.appendChild(tr)}})}}
 if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js')}}
 </script></body></html>
 """
