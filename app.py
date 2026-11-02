@@ -85,7 +85,7 @@ HTML_ADMIN = """
 <a href="/buscar" class="back">← Volver a Caja</a>
 <div class="card"><h2>👥 Administrar Usuarios</h2><p>Solo visible para <b>ayala</b> (ADMIN)</p>
 <form method="post"><h3>Agregar Nuevo Usuario</h3>
-<input name="new_user" placeholder="Nuevo usuario ej: cajero1" required>
+<input name="new_user" placeholder="Nuevo usuario ej: Cajero1" required>
 <input name="new_pass" placeholder="Clave ej: 1234" required>
 <select name="new_role" style="width:100%;padding:12px;margin:6px 0;border-radius:8px"><option value="user">Usuario Normal (solo ver caja)</option><option value="admin">Administrador (puede crear usuarios)</option></select>
 <button>Crear Usuario</button>{% if msg %}<p style="color:green;font-weight:bold">{{msg}}</p>{% endif %}</form></div>
@@ -135,7 +135,7 @@ def admin():
     users=load_users()
     msg=None
     if request.method=='POST':
-        nu=request.form.get('new_user','').strip().lower()
+        nu=request.form.get('new_user','').strip()
         np=request.form.get('new_pass','').strip()
         nr=request.form.get('new_role','user')
         if nu and np:
