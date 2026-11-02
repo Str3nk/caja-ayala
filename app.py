@@ -21,15 +21,13 @@ def save_users(users):
         json.dump(users, f, indent=2)
 
 def load_data():
-    df = pd.read_excel(EXCEL_FILE)
+    df = pd.read_excel(EXCEL_FILE, dtype=str)
     df.columns = [str(c).strip().upper() for c in df.columns]
-    df = df[pd.to_numeric(df['NUMERO DE RECIBO'], errors='coerce').notna()]
     df = df.fillna('')
-    df['ULTIMO PAGO'] = df['ULTIMO PAGO'].astype(str)
     return df.to_dict(orient='records')
 
 DATA = load_data()
-print(f"Cargados {len(DATA)} registros - Usuarios: {list(load_users().keys())}")
+print(f"Cargados {len(DATA)} expedientes - Usuarios: {list(load_users().keys())}")
 
 LOADER = """
 <div id="loader-caja"><div class="caja-box"><div class="caja-icon">💰</div><div class="spinner-caja"></div><h2>Caja Ayala</h2><p>Cargando sistema...</p></div></div>
@@ -67,16 +65,16 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 </style></head><body>
 {LOADER}
 <div class="header">
-<div><b>CAJA ({{{{count}}}})</b> - Hola {{{{username}}}} {{% if role=='admin' %}}(ADMIN){{% endif %}}</div>
+<div><b>EXPEDIENTES ({{{{count}}}})</b> - Hola {{{{username}}}} {{% if role=='admin' %}}(ADMIN){{% endif %}}</div>
 <div style="display:flex;gap:10px;align-items:center">
 {{% if role=='admin' %}}<a href="/admin" class="btn-admin">👥 Usuarios</a>{{% endif %}}
 <a href="/logout" class="btn-logout">Salir</a>
 </div>
 </div>
-<div class="search"><input id="q" placeholder="🔍 Buscar recibo, código, RIF o razón social... Ej: 001227" onkeyup="filtrar()" autofocus>
+<div class="search"><input id="q" placeholder="🔍 Buscar por RIF, código, razón social, sector, archivo o gaveta..." onkeyup="filtrar()" autofocus>
 <div id="result">Escribe para buscar</div>
-<table><thead><tr><th>ULTIMO PAGO</th><th>NUMERO DE RECIBO</th><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ARCHIVO</th><th>GAVETA</th></tr></thead><tbody id="tbody"></tbody></table></div>
-<script>const data={{{{data_json|safe}}}};function filtrar(){{const q=document.getElementById('q').value.toLowerCase().trim();const tbody=document.getElementById('tbody');const res=document.getElementById('result');tbody.innerHTML='';if(!q){{res.innerText='Escribe para buscar';return}}const f=data.filter(r=>String(r['NUMERO DE RECIBO']).toLowerCase().includes(q)||String(r['CODIGO EXPEDIENTE']).toLowerCase().includes(q)||String(r['RIF']).toLowerCase().includes(q)||String(r['RAZON SOCIAL']).toLowerCase().includes(q)).slice(0,100);res.innerText=f.length+' resultados';f.forEach(r=>{{const tr=document.createElement('tr');tr.innerHTML=`<td>${{r['ULTIMO PAGO']}}</td><td><span class=badge>${{r['NUMERO DE RECIBO']}}</span></td><td>${{r['CODIGO EXPEDIENTE']}}</td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td>`;tbody.appendChild(tr)}})}}
+<table><thead><tr><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ESTATUS</th><th>ARCHIVO</th><th>GAVETA</th><th>ULTIMO PAGO</th><th>RECIBO</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<script>const data={{{{data_json|safe}}}};function filtrar(){{const q=document.getElementById('q').value.toLowerCase().trim();const tbody=document.getElementById('tbody');const res=document.getElementById('result');tbody.innerHTML='';if(!q){{res.innerText='Escribe para buscar';return}}const f=data.filter(r=>String(r['RIF']).toLowerCase().includes(q)||String(r['RAZON SOCIAL']).toLowerCase().includes(q)||String(r['CODIGO EXPEDIENTE']).toLowerCase().includes(q)||String(r['SECTOR']).toLowerCase().includes(q)||String(r['ARCHIVO']).toLowerCase().includes(q)||String(r['GAVETA']).toLowerCase().includes(q)).slice(0,100);res.innerText=f.length+' resultados';f.forEach(r=>{{const tr=document.createElement('tr');tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ESTATUS DE LICENCIA']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;tbody.appendChild(tr)}})}}
 if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js')}}
 </script></body></html>
 """
@@ -108,7 +106,7 @@ def sw():
 @app.route('/ping')
 @app.route('/health')
 def health():
-    return {"status": "ok", "recibos": len(DATA)}, 200
+    return {"status": "ok", "expedientes": len(DATA)}, 200
 
 @app.route('/', methods=['GET','POST'])
 def login():
