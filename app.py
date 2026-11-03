@@ -74,6 +74,10 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 .btn-admin{{background:#10b981;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold}}
 .btn-logout{{color:#93c5fd;text-decoration:none;font-size:13px}}
 #result{{font-weight:bold;margin-top:10px}}
+.status-vigente{{background:#22c55e !important;color:#ffffff !important;font-weight:bold}}
+.status-tramite{{background:#eab308 !important;color:#422006 !important;font-weight:bold}}
+.status-vencida{{background:#ef4444 !important;color:#ffffff !important;font-weight:bold}}
+.status-inactiva{{background:#94a3b8 !important;color:#1e293b !important;font-weight:bold}}
 </style></head><body>
 {LOADER}
 <div class="header">
@@ -88,6 +92,14 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 <table><thead><tr><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ESTATUS</th><th>ARCHIVO</th><th>GAVETA</th><th>ULTIMO PAGO</th><th>RECIBO</th></tr></thead><tbody id="tbody"></tbody></table></div>
 <script>
 const data={{{{data_json|safe}}}};
+function getStatusClass(est){{
+  const e = String(est||'').toLowerCase().trim();
+  if(e.includes('vigente')) return 'status-vigente';
+  if(e.includes('trámite') || e.includes('tramite')) return 'status-tramite';
+  if(e.includes('vencida')) return 'status-vencida';
+  if(e.includes('inactiva') || e.includes('cese')) return 'status-inactiva';
+  return 'status-inactiva';
+}}
 function filtrar(){{
   const q=document.getElementById('q').value.toLowerCase().trim();
   const tbody=document.getElementById('tbody');
@@ -108,7 +120,9 @@ function filtrar(){{
   res.innerText=f.length+' resultados';
   f.forEach(r=>{{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{r['ESTATUS DE LICENCIA']}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;
+    const est = r['ESTATUS DE LICENCIA'] || '';
+    const cls = getStatusClass(est);
+    tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td class="${{cls}}">${{est}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;
     tbody.appendChild(tr);
   }});
 }}
