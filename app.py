@@ -120,7 +120,7 @@ HTML_ADMIN = """
 <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body{font-family:Arial;background:#f1f5f9;margin:0;padding:15px}.card{background:white;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}button{padding:12px 18px;background:#10b981;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer}.danger{background:#ef4444;padding:6px 12px;border-radius:6px;color:white;text-decoration:none;font-size:12px}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #eee}a.back{color:#0f172a;text-decoration:none;font-weight:bold}</style></head><body>
 <a href="/buscar" class="back">← Volver a Caja</a>
-<div class="card"><h2>👥 Administrar Usuarios</h2><p>Solo visible para <b>ayala</b> (ADMIN)</p>
+<div class="card"><h2>👥 Administrar Usuarios</h2><p>Solo visible para <b>ayala y Edward</b> (ADMIN)</p>
 <form method="post"><h3>Agregar Nuevo Usuario</h3>
 <input name="new_user" placeholder="Nuevo usuario ej: Cajero1" required>
 <input name="new_pass" placeholder="Clave ej: 1234" required>
@@ -128,7 +128,7 @@ HTML_ADMIN = """
 <button>Crear Usuario</button>{% if msg %}<p style="color:green;font-weight:bold">{{msg}}</p>{% endif %}</form></div>
 <div class="card"><h3>Usuarios Actuales ({{users|length}})</h3>
 <table><tr><th>Usuario</th><th>Rol</th><th>Acción</th></tr>
-{% for u, info in users.items() %}<tr><td>{{u}}</td><td>{{info.role}}</td><td>{% if u!='ayala' %}<a href="/admin/delete/{{u}}" class="danger" onclick="return confirm('¿Borrar {{u}}?')">Borrar</a>{% else %}Principal{% endif %}</td></tr>{% endfor %}
+{% for u, info in users.items() %}<tr><td>{{u}}</td><td>{{info.role}}</td><td>{% if u not in ['ayala', 'Edward'] %}<a href="/admin/delete/{{u}}" class="danger" onclick="return confirm('¿Borrar {{u}}?')">Borrar</a>{% else %}Principal{% endif %}</td></tr>{% endfor %}
 </table></div></body></html>
 """
 
@@ -188,7 +188,7 @@ def admin():
 def delete_user(user):
     if not session.get('logged') or session.get('role')!='admin': return redirect('/buscar')
     users=load_users()
-    if user!='ayala' and user in users:
+    if user not in ['ayala', 'Edward'] and user in users:
         del users[user]
         save_users(users)
     return redirect('/admin')
