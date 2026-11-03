@@ -116,7 +116,7 @@ function filtrar(){{
     String(r['ULTIMO PAGO']).toLowerCase().includes(q)||
     String(r['NUMERO DE RECIBO']).toLowerCase().includes(q)||
     String(r['ESTATUS DE LICENCIA']).toLowerCase().includes(q)
-  ).slice(0,100);
+  );
   res.innerText=f.length+' resultados';
   f.forEach(r=>{{
     const tr=document.createElement('tr');
