@@ -1,6 +1,7 @@
 import pandas as pd
-from flask import Flask, request, render_template_string, session, redirect
+from flask import Flask, request, render_template_string, session, redirect, jsonify
 import os, json
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'lionfire-secret-2025'
@@ -39,7 +40,8 @@ def load_data():
     return df.to_dict(orient='records')
 
 DATA = load_data()
-print(f"Cargados {len(DATA)} expedientes - Usuarios: {list(load_users().keys())}")
+DATA_VERSION = datetime.now().strftime("%Y-%m-%d %H:%M")
+print(f"Cargados {len(DATA)} expedientes - Usuarios: {list(load_users().keys())} - Versión: {DATA_VERSION}")
 
 LOADER = """
 <div id="loader-caja"><div class="caja-box"><div class="caja-icon">💰</div><div class="spinner-caja"></div><h2>Caja Ayala</h2><p>Cargando sistema...</p></div></div>
@@ -58,7 +60,9 @@ button{{width:100%;padding:12px;background:#3b82f6;color:white;border:none;borde
 <h2>🌙 Login</h2><form method="post">
 <input name="user" placeholder="Usuario" required>
 <input name="pass" type="password" placeholder="Clave" required>
-<button>Entrar</button>{{% if error %}}<p style="color:#f87171">{{{{error}}}}</p>{{% endif %}}</form></div></body></html>
+<button>Entrar</button>{{% if error %}}<p style="color:#f87171">{{{{error}}}}</p>{{% endif %}}</form>
+<p style="font-size:12px;opacity:.7;margin-top:15px;text-align:center">Instala la app: menú ⋮ → Agregar a pantalla de inicio</p>
+</div></body></html>
 """
 
 HTML_APP = f"""
@@ -73,7 +77,11 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 .badge{{padding:6px 10px;border-radius:8px;background:#dbeafe;color:#1e40af;font-weight:bold}}
 .btn-admin{{background:#10b981;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold}}
 .btn-logout{{color:#93c5fd;text-decoration:none;font-size:13px}}
+.btn-sync{{background:#3b82f6;color:white;padding:8px 14px;border-radius:8px;border:none;font-size:13px;font-weight:bold;cursor:pointer}}
 #result{{font-weight:bold;margin-top:10px}}
+#offline-status{{font-size:12px;padding:8px;border-radius:8px;margin-top:10px;display:none}}
+.offline{{background:#fef3c7;color:#92400e;display:block !important}}
+.online{{background:#d1fae5;color:#065f46;display:block !important}}
 tr.row-vigente td{{background:#22c55e !important;color:#ffffff !important}}
 tr.row-tramite td{{background:#eab308 !important;color:#422006 !important}}
 tr.row-vencida td{{background:#ef4444 !important;color:#ffffff !important}}
@@ -82,17 +90,86 @@ tr.row-vigente td .badge, tr.row-tramite td .badge, tr.row-vencida td .badge, tr
 </style></head><body>
 {LOADER}
 <div class="header">
-<div><b>EXPEDIENTES ({{{{count}}}})</b> - Hola {{{{username}}}} {{% if role=='admin' %}}(ADMIN){{% endif %}}</div>
-<div style="display:flex;gap:10px;align-items:center">
+<div><b>EXPEDIENTES ({{{{count}}}})</b> - Hola {{{{username}}}} {{% if role=='admin' %}}(ADMIN){{% endif %}}<br><small style="opacity:.8">Datos: <span id="fecha-datos">{{{{version}}}}</span> | <span id="modo">Modo: Online</span></small></div>
+<div style="display:flex;gap:8px;align-items:center">
+<button class="btn-sync" onclick="sincronizar()">🔄 Actualizar</button>
 {{% if role=='admin' %}}<a href="/admin" class="btn-admin">👥 Usuarios</a>{{% endif %}}
 <a href="/logout" class="btn-logout">Salir</a>
 </div>
 </div>
+<div id="offline-status"></div>
 <div class="search"><input id="q" placeholder="🔍 Buscar por RIF, código, razón social, sector, archivo, gaveta o último pago..." onkeyup="filtrar()" autofocus>
 <div id="result">Escribe para buscar</div>
 <table><thead><tr><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ESTATUS</th><th>ARCHIVO</th><th>GAVETA</th><th>ULTIMO PAGO</th><th>RECIBO</th></tr></thead><tbody id="tbody"></tbody></table></div>
 <script>
-const data={{{{data_json|safe}}}};
+const SERVER_DATA = {{{{data_json|safe}}}};
+const SERVER_VERSION = "{{{{version}}}}";
+let data = [];
+
+// Cargar datos: primero local, luego servidor
+function cargarDatos() {{
+  const localData = localStorage.getItem('caja_datos');
+  const localVersion = localStorage.getItem('caja_version');
+  
+  if (localData) {{
+    data = JSON.parse(localData);
+    document.getElementById('fecha-datos').innerText = localVersion || 'Sin fecha';
+    document.getElementById('modo').innerText = 'Modo: Offline (datos guardados)';
+    mostrarEstado('offline', '📴 Modo offline: usando datos guardados del ' + (localVersion || ''));
+  }} else {{
+    data = SERVER_DATA;
+    localStorage.setItem('caja_datos', JSON.stringify(data));
+    localStorage.setItem('caja_version', SERVER_VERSION);
+    document.getElementById('fecha-datos').innerText = SERVER_VERSION;
+  }}
+}}
+
+function mostrarEstado(tipo, texto) {{
+  const el = document.getElementById('offline-status');
+  el.className = tipo;
+  el.innerText = texto;
+  el.style.display = 'block';
+}}
+
+function sincronizar() {{
+  mostrarEstado('online', '🔄 Buscando actualización...');
+  fetch('/datos.json')
+    .then(r => r.json())
+    .then(res => {{
+      const localVersion = localStorage.getItem('caja_version');
+      if (res.version !== localVersion) {{
+        localStorage.setItem('caja_datos', JSON.stringify(res.data));
+        localStorage.setItem('caja_version', res.version);
+        data = res.data;
+        document.getElementById('fecha-datos').innerText = res.version;
+        mostrarEstado('online', '✅ Datos actualizados: ' + res.version + ' (' + res.data.length + ' expedientes)');
+        document.getElementById('modo').innerText = 'Modo: Online';
+      }} else {{
+        mostrarEstado('online', '✅ Ya estás actualizado: ' + res.version);
+      }}
+    }})
+    .catch(() => {{
+      mostrarEstado('offline', '📴 Sin internet. Usando datos guardados del ' + (localStorage.getItem('caja_version') || ''));
+    }});
+}}
+
+// Auto-sincronizar al abrir si hay internet
+cargarDatos();
+if (navigator.onLine) {{
+  setTimeout(sincronizar, 2000);
+}}
+
+// Detectar cambio de conexión
+window.addEventListener('online', () => {{
+  document.getElementById('modo').innerText = 'Modo: Online';
+  mostrarEstado('online', '🟢 Conectado. Sincronizando...');
+  sincronizar();
+}});
+window.addEventListener('offline', () => {{
+  document.getElementById('modo').innerText = 'Modo: Offline';
+  mostrarEstado('offline', '📴 Sin conexión. Modo offline activado.');
+}});
+
 function getRowClass(est){{
   const e = String(est||'').toLowerCase().trim();
   if(e.includes('vigente')) return 'row-vigente';
@@ -153,12 +230,68 @@ def manifest():
 
 @app.route('/sw.js')
 def sw():
-    return "self.addEventListener('install', e=>self.skipWaiting());", 200, {'Content-Type':'application/javascript'}
+    sw_code = """
+const CACHE_NAME = 'caja-ayala-v2';
+const urlsToCache = ['/buscar', '/datos.json'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(urlsToCache).catch(()=>{});
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  // Estrategia: Cache primero, luego red
+  event.respondWith(
+    caches.match(event.request).then(cachedResponse => {
+      const fetchPromise = fetch(event.request).then(networkResponse => {
+        // Actualizar caché si la respuesta es válida
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Si no hay internet, devolver caché
+        return cachedResponse;
+      });
+      
+      return cachedResponse || fetchPromise;
+    })
+  );
+});
+    """
+    return sw_code, 200, {'Content-Type':'application/javascript'}
+
+@app.route('/datos.json')
+def datos():
+    if not session.get('logged'):
+        return redirect('/')
+    return jsonify({"data": DATA, "version": DATA_VERSION, "total": len(DATA)})
 
 @app.route('/ping')
 @app.route('/health')
 def health():
-    return {"status": "ok", "expedientes": len(DATA)}, 200
+    return {"status": "ok", "expedientes": len(DATA), "version": DATA_VERSION}, 200
 
 @app.route('/', methods=['GET','POST'])
 def login():
@@ -179,7 +312,7 @@ def login():
 @app.route('/buscar')
 def buscar():
     if not session.get('logged'): return redirect('/')
-    return render_template_string(HTML_APP, data_json=json.dumps(DATA, ensure_ascii=False), count=len(DATA), username=session.get('username'), role=session.get('role'))
+    return render_template_string(HTML_APP, data_json=json.dumps(DATA, ensure_ascii=False), count=len(DATA), version=DATA_VERSION, username=session.get('username'), role=session.get('role'))
 
 @app.route('/admin', methods=['GET','POST'])
 def admin():
