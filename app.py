@@ -20,7 +20,6 @@ def load_users():
     with open(USERS_FILE, 'r') as f:
         users = json.load(f)
     
-    # Agregar Edward si no existe
     if "Edward" not in users:
         users["Edward"] = {"pass": "Edward1", "role": "admin"}
         with open(USERS_FILE, 'w') as f:
@@ -36,6 +35,9 @@ def load_data():
     df = pd.read_excel(EXCEL_FILE, dtype=str, sheet_name='DATA')
     df.columns = [str(c).strip().upper() for c in df.columns]
     df = df.fillna('')
+    # Ignorar filas vacías
+    df = df[df['CODIGO EXPEDIENTE'].astype(str).str.strip() != '']
+    print(f"Excel leído: {len(df)} expedientes con datos")
     return df.to_dict(orient='records')
 
 DATA = load_data()
@@ -74,10 +76,11 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 .btn-admin{{background:#10b981;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold}}
 .btn-logout{{color:#93c5fd;text-decoration:none;font-size:13px}}
 #result{{font-weight:bold;margin-top:10px}}
-.status-vigente{{background:#22c55e !important;color:#ffffff !important;font-weight:bold}}
-.status-tramite{{background:#eab308 !important;color:#422006 !important;font-weight:bold}}
-.status-vencida{{background:#ef4444 !important;color:#ffffff !important;font-weight:bold}}
-.status-inactiva{{background:#94a3b8 !important;color:#1e293b !important;font-weight:bold}}
+tr.row-vigente td{{background:#22c55e !important;color:#ffffff !important}}
+tr.row-tramite td{{background:#eab308 !important;color:#422006 !important}}
+tr.row-vencida td{{background:#ef4444 !important;color:#ffffff !important}}
+tr.row-inactiva td{{background:#94a3b8 !important;color:#1e293b !important}}
+tr.row-vigente td .badge, tr.row-tramite td .badge, tr.row-vencida td .badge, tr.row-inactiva td .badge{{background:rgba(255,255,255,0.9) !important;color:#1e293b !important}}
 </style></head><body>
 {LOADER}
 <div class="header">
@@ -92,13 +95,13 @@ th{{background:#0f172a;color:white;padding:12px;text-align:left;font-size:12px}}
 <table><thead><tr><th>CODIGO EXPEDIENTE</th><th>RIF</th><th>RAZON SOCIAL</th><th>SECTOR</th><th>ESTATUS</th><th>ARCHIVO</th><th>GAVETA</th><th>ULTIMO PAGO</th><th>RECIBO</th></tr></thead><tbody id="tbody"></tbody></table></div>
 <script>
 const data={{{{data_json|safe}}}};
-function getStatusClass(est){{
+function getRowClass(est){{
   const e = String(est||'').toLowerCase().trim();
-  if(e.includes('vigente')) return 'status-vigente';
-  if(e.includes('trámite') || e.includes('tramite')) return 'status-tramite';
-  if(e.includes('vencida')) return 'status-vencida';
-  if(e.includes('inactiva') || e.includes('cese')) return 'status-inactiva';
-  return 'status-inactiva';
+  if(e.includes('vigente')) return 'row-vigente';
+  if(e.includes('trámite') || e.includes('tramite')) return 'row-tramite';
+  if(e.includes('vencida')) return 'row-vencida';
+  if(e.includes('inactiva') || e.includes('cese')) return 'row-inactiva';
+  return 'row-inactiva';
 }}
 function filtrar(){{
   const q=document.getElementById('q').value.toLowerCase().trim();
@@ -121,8 +124,8 @@ function filtrar(){{
   f.forEach(r=>{{
     const tr=document.createElement('tr');
     const est = r['ESTATUS DE LICENCIA'] || '';
-    const cls = getStatusClass(est);
-    tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td class="${{cls}}">${{est}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;
+    tr.className = getRowClass(est);
+    tr.innerHTML=`<td><span class=badge>${{r['CODIGO EXPEDIENTE']}}</span></td><td>${{r['RIF']}}</td><td>${{r['RAZON SOCIAL']}}</td><td>${{r['SECTOR']}}</td><td>${{est}}</td><td>${{r['ARCHIVO']}}</td><td>${{r['GAVETA']}}</td><td>${{r['ULTIMO PAGO']}}</td><td>${{r['NUMERO DE RECIBO']}}</td>`;
     tbody.appendChild(tr);
   }});
 }}
