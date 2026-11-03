@@ -9,12 +9,24 @@ USERS_FILE = 'users.json'
 
 def load_users():
     if not os.path.exists(USERS_FILE):
-        default = {"ayala": {"pass": "lionfire", "role": "admin"}}
+        default = {
+            "ayala": {"pass": "lionfire", "role": "admin"},
+            "Edward": {"pass": "Edward1", "role": "admin"}
+        }
         with open(USERS_FILE, 'w') as f:
             json.dump(default, f)
         return default
+    
     with open(USERS_FILE, 'r') as f:
-        return json.load(f)
+        users = json.load(f)
+    
+    # Agregar Edward si no existe
+    if "Edward" not in users:
+        users["Edward"] = {"pass": "Edward1", "role": "admin"}
+        with open(USERS_FILE, 'w') as f:
+            json.dump(users, f)
+    
+    return users
 
 def save_users(users):
     with open(USERS_FILE, 'w') as f:
