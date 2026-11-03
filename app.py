@@ -35,9 +35,7 @@ def load_data():
     df = pd.read_excel(EXCEL_FILE, dtype=str, sheet_name='DATA')
     df.columns = [str(c).strip().upper() for c in df.columns]
     df = df.fillna('')
-    # Ignorar filas vacías
-    df = df[df['CODIGO EXPEDIENTE'].astype(str).str.strip() != '']
-    print(f"Excel leído: {len(df)} expedientes con datos")
+    print(f"Excel leído: {len(df)} expedientes")
     return df.to_dict(orient='records')
 
 DATA = load_data()
